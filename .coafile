@@ -1,0 +1,5 @@
+[cli.all]
+config = .coafile
+no_orig = True
+bears = SpaceConsistencyBear, PEP8Bear
+use_spaces=False

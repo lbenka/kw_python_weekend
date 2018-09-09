@@ -1,0 +1,14 @@
+version: "3.3"
+services:
+  app:
+    build:
+      context: .
+    command:
+      - "hug"
+      - "-f" 
+      - "/app/api.py"
+    ports:
+      - "8000:8000"
+    
+  redis-local:
+    image: redis
