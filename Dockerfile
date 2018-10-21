@@ -1,13 +1,21 @@
-FROM python:3.6-alpine
+FROM python:3.7-alpine3.8
 
 WORKDIR /app
-COPY . /app
 
-RUN apk add --update --no-cache g++ gcc libxslt-dev
+RUN apk add --update --no-cache g++ gcc libxslt-dev 
 
+COPY Pipfile* /app/
+
+RUN pip install --upgrade pip
 RUN pip install pipenv 
 RUN pipenv install --system --deploy --verbose
 
-EXPOSE 8000
+# you should probably change this 
+# EXPOSE 8000
+# CMD [ "hug", "-f", "lb/journey_finder_hug/start_up/hug_api.py" ]
 
-CMD [ "hug", "-f", "/app/api.py" ]
+COPY . /app
+
+EXPOSE 5000
+ENV FLASK_APP="lb.journey_finder_flask.api:app"
+CMD ["flask", "run", "--host=0.0.0.0"]
