@@ -55,14 +55,15 @@ def _get_routes(src: dict, dst: dict, when: datetime) -> dict:
     r = s.get(next_url)
     return r.json()
 
+
 def get_routes(src_name: str, dst_name: str, when: datetime):
     dests = get_destinations()
-    
+
     for d in dests:
-        if src_name in d.get('name'):
+        if src_name in d.get("name"):
             src = d
-        if dst_name in d.get('name'):
+        if dst_name in d.get("name"):
             dst = d
-    
+
     routes = _get_routes(src, dst, when)
     return routes
