@@ -3,9 +3,9 @@ services:
   app:
     build:
       context: .
-    command: gunicorn --bind=0.0.0.0:5000 lb.journey_finder_flask.api:app
+    command: gunicorn --bind=0.0.0.0:8000 lb.journey_finder_hug.api:__hug_wsgi__
     ports:
-      - "5000:5000"
+      - "8000:8000"
 
   redis-local:
     image: redis

@@ -12,7 +12,7 @@ variables:
     --service app
 
 image: docker:latest
-  
+
 coala:
   stage: build
   image: coala/base:latest
