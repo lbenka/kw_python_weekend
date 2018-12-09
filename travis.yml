@@ -1,0 +1,8 @@
+language: python
+
+services: 
+  - docker
+
+before_install:
+  - docker build -t benkalukas/test_py_weekend_flask .
+ 
