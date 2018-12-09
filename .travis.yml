@@ -1,8 +1,12 @@
 language: python
+services:
+- docker
 
-services: 
-  - docker
+build:
+- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+- docker build -t benkalukas/test_py_weekend_flask .
+- docker push benkalukas/test_py_weekend_flask
 
-before_install:
-  - docker build -t benkalukas/test_py_weekend_flask .
- 
+env:
+  matrix:
+    secure: rmEKflROiAdUocz2s2o92lPV+9hsNIsf74iMTwQf8l8X6LZNitVGdJ0o0uDrFv3dFzS7w23TVQjtJ5mq6Ma3NpbL2Ld9dwvJsHvs9sX4kbeEiW7DSuCXdzR1g0QIE8c/7v5/8yYSpcNuqkGRLtMXqZcu46pUggXe9ji3T6XN4ljJcrD5SyLDy1I02iWuA6WUleCFWo9FsfNhkiffURndAyu4YSin64BcvOQck1pay9Kx1cG+RihrWiW1i+fy6cBY0YQ7JuuYw9fTUHcEohgoMfLicnYyCBId/8p/Q5CEVIqnbxRtm6OzP8nx3ooM5JmwETwwuGDD7pN5yYT3Q1s4gUcp5r4wZ9gJ6fgJnPr13Fw4o2Mc4/iBkG/B7PQqeg3YGVcVRMMEOzs4KHth1Q+nZiAzaKOt0VHwYb90D/HYNWd3i6Gwv57w2HCraLEOR/NgA4GXiE6Y0aDD0UqxwXicuwYsTrlM2R9IEAss3unW1wmencLdFpO9VNdPCUIJ0wudoxU6ENjgmXcX3SCQESnQSsq1804bTYt4fV9JaD8swz711NKwJwggiILyYwFgGO5/qgocHeVub1P1IfJMrPhKc2lkUaNCXaejG7A/DssCXomymbdzOtYfMk8tbDlPSLf/bSFwGTvvlZmnbeEOd+05hLm2F5khqgJhkwkEp487dts=
