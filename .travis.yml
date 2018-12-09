@@ -1,11 +1,13 @@
 language: python
 services:
-- docker
+  - docker
 
 build:
-- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-- docker build -t benkalukas/test_py_weekend_flask .
-- docker push benkalukas/test_py_weekend_flask
+  - docker build -t benkalukas/test_py_weekend_flask .
+
+deploy:
+  provider: script
+  script: bash docker_push
 
 env:
   matrix:
