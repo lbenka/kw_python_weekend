@@ -2,7 +2,7 @@ language: python
 services:
   - docker
 
-build:
+script:
   - docker build -t benkalukas/test_py_weekend_flask .
 
 deploy:
