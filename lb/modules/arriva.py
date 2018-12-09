@@ -21,12 +21,7 @@ class ArrivaClient:
     homepage = "https://www.arriva.com.hr/en-us/"
     s = HTMLSession()
 
-    def get_journeys(
-        self,
-        source: str = "Split",
-        destination: str = "Zagreb",
-        departure: str = "22.10.2018.",
-    ):
+    def get_journeys(self, source: str = "Split", destination: str = "Zagreb", departure: str = "22.10.2018."):
         payload = {
             "post-type": "shop",
             "currentstepnumber": "1",
@@ -44,29 +39,18 @@ class ArrivaClient:
         journeys: List[ResponseJourney] = []
 
         route_times = [
-            e.text
-            for e in r.html.find(
-                "#departures-group > div.row.tab-info > div.col-sm-3.polazak-dolazak"
-            )
+            e.text for e in r.html.find("#departures-group > div.row.tab-info > div.col-sm-3.polazak-dolazak")
         ]
         for route in route_times:
-            departure, arrival = (
-                route.replace("Departure - Arrival", "").split("\n")[0].split(" - ")
-            )
+            departure, arrival = route.replace("Departure - Arrival", "").split("\n")[0].split(" - ")
 
             j = ResponseJourney(
-                departure_datetime=departure,
-                arrival_datetime=arrival,
-                source=source,
-                destination=destination,
+                departure_datetime=departure, arrival_datetime=arrival, source=source, destination=destination
             )
             journeys.append(j)
 
         route_prices = [
-            e.text
-            for e in r.html.xpath(
-                "//*[@class='btn btn-green btn-small btn-block visible-md visible-lg']"
-            )
+            e.text for e in r.html.xpath("//*[@class='btn btn-green btn-small btn-block visible-md visible-lg']")
         ]
         for index, route in enumerate(route_prices):
             price, currency = route.split()

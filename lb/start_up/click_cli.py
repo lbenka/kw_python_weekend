@@ -5,9 +5,7 @@ from lb.modules.alsa import get_routes
 
 
 @click.command()
-@click.option(
-    "--src", prompt="Source of trip", help="From where you wanna start your trip."
-)
+@click.option("--src", prompt="Source of trip", help="From where you wanna start your trip.")
 @click.option("--dst", prompt="Destination of trip", help="To where you wanna go")
 @click.option("--when", prompt="When", help="When you wanna leave")
 def click_routes(src, dst, when):

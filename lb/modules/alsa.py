@@ -49,9 +49,7 @@ def _get_routes(src: dict, dst: dict, when: datetime) -> dict:
         "p_auth": "khT041BH",
     }
     r = s.get("https://www.alsa.com/en/web/bus/checkout", params=query)
-    next_url = r.html.find("data-sag-journeys-component", first=True).attrs.get(
-        "sag-journeys-table-body-url"
-    )
+    next_url = r.html.find("data-sag-journeys-component", first=True).attrs.get("sag-journeys-table-body-url")
     r = s.get(next_url)
     return r.json()
 

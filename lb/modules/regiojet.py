@@ -6,11 +6,7 @@ import maya
 import requests
 from bs4 import BeautifulSoup, NavigableString, Tag
 
-redis_config = {
-    "host": "188.166.60.144",
-    "password": "akd89DSk23Kldl0ram29",
-    "port": 6379,
-}
+redis_config = {"host": "188.166.60.144", "password": "akd89DSk23Kldl0ram29", "port": 6379}
 
 
 redis_pool = redis.ConnectionPool(**redis_config)
@@ -25,9 +21,7 @@ def put_into_redis(key: str, value: dict) -> None:
 
 def parse_time(base: str, time: str):
     parsed = base.split(".")
-    formated = "{year}-{month}-{day}".format(
-        day=parsed[0], month=parsed[1], year=2000 + int(parsed[2])
-    )
+    formated = "{year}-{month}-{day}".format(day=parsed[0], month=parsed[1], year=2000 + int(parsed[2]))
     return maya.parse("{base}T{time}".format(base=formated, time=time)).datetime()
 
 
@@ -50,9 +44,7 @@ class Regiojet(object):
         return cities
 
     def fetch_destination(self) -> list:
-        destination = self.s.get(
-            "https://www.studentagency.cz/data/wc/ybus-form/destinations-cs.json"
-        ).json()
+        destination = self.s.get("https://www.studentagency.cz/data/wc/ybus-form/destinations-cs.json").json()
 
         # parsing cities
         cities = []
@@ -77,13 +69,7 @@ class Regiojet(object):
                 return c["id"]
 
     # this is how type hinting looks like
-    def get_route(
-        self,
-        source: int = None,
-        destination: int = None,
-        departure: date = None,
-        arrival: date = None,
-    ):
+    def get_route(self, source: int = None, destination: int = None, departure: date = None, arrival: date = None):
         self.s.get(
             "https://jizdenky.regiojet.cz/Booking/from/{source}/to/{destination}/tarif/REGULAR/departure/{departure}/"
             "retdep/{arrival}/return/false".format(
@@ -119,12 +105,8 @@ class Regiojet(object):
             currency = real_price_cur_combo[3]
 
         return {
-            "departure": parse_time(
-                base_date, item.find_all("div", "col_depart")[0].contents[0]
-            ),
-            "arrival": parse_time(
-                base_date, item.find_all("div", "col_arival")[0].contents[0]
-            ),
+            "departure": parse_time(base_date, item.find_all("div", "col_depart")[0].contents[0]),
+            "arrival": parse_time(base_date, item.find_all("div", "col_arival")[0].contents[0]),
             "space": item.find_all("div", "col_space")[0].get_text().strip(),
             "price": price,
             "currency": currency,
@@ -132,9 +114,7 @@ class Regiojet(object):
 
     def parse_routes(self, routes):
         soup = BeautifulSoup(routes.content, "html.parser")
-        parent_of_routes = soup.find_all(
-            "div", "item_blue blue_gradient_our routeSummary free"
-        )[0].parent
+        parent_of_routes = soup.find_all("div", "item_blue blue_gradient_our routeSummary free")[0].parent
 
         current_date = None
         routes = []
@@ -143,20 +123,11 @@ class Regiojet(object):
                 continue
             elif element.name == "h2":
                 current_date = element.get_text().split()[1]
-            elif (
-                " ".join(element.attrs["class"])
-                == "item_blue blue_gradient_our routeSummary free"
-            ):
+            elif " ".join(element.attrs["class"]) == "item_blue blue_gradient_our routeSummary free":
                 routes.append(self.parse_single_item(element, current_date))
         return routes
 
-    def get_route_prices(
-        self,
-        source: str,
-        destination: str,
-        departure: date = None,
-        arrival: date = None,
-    ):
+    def get_route_prices(self, source: str, destination: str, departure: date = None, arrival: date = None):
         source_id = self.find_city_id(source)
         dest_id = self.find_city_id(destination)
 
@@ -167,9 +138,6 @@ class Regiojet(object):
 if __name__ == "__main__":
     regio = Regiojet()
     routes = regio.get_route_prices(
-        source="Brno",
-        destination="Praha",
-        departure=date(2018, 2, 24),
-        arrival=date(2018, 2, 24),
+        source="Brno", destination="Praha", departure=date(2018, 2, 24), arrival=date(2018, 2, 24)
     )
     print(routes)

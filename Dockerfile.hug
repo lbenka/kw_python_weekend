@@ -8,5 +8,4 @@ RUN pipenv install --system --deploy
 
 COPY . /app
 
-EXPOSE 8000
-CMD [ "hug", "-f", "lb/journey_finder_hug/start_up/hug_api.py" ]
+CMD [ "gunicorn", "lb.journey_finder_hug.api:__hug_wsgi__" ]

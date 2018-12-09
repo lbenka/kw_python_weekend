@@ -1,0 +1,15 @@
+language: python
+
+services: 
+  - docker
+
+before_install:
+  - docker build -t benkalukas/test_py_weekend_flask .
+  - docker run benkalukas/test_py_weekend_flask black . check -l 120 
+  - docker run benkalukas/test_py_weekend_flask pylint --reports no --persistent no lb/
+  - docker run benkalukas/test_py_weekend_flask /bin/sh -c "mypy --follow-imports silent --config-file ./mypy.ini -p lb"
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: "YOUR ENCRYPTED API KEY"
