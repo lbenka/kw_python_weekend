@@ -1,14 +1,17 @@
-import redis
-import simplejson as json
 from datetime import date
-
+import attr
 import maya
+import redis
 import requests
+import simplejson as json
 from bs4 import BeautifulSoup, NavigableString, Tag
+from typing import List
+from lb.modules.provider_base import Provider
+from lb.data_classes.response_journey import ResponseJourney
 
 redis_config = {
-    "host": "188.166.60.144",
-    "password": "akd89DSk23Kldl0ram29",
+    "host": "localhost",
+    # "password": "akd89DSk23Kldl0ram29",
     "port": 6379,
 }
 
@@ -25,21 +28,24 @@ def put_into_redis(key: str, value: dict) -> None:
 
 def parse_time(base: str, time: str):
     parsed = base.split(".")
-    formated = "{year}-{month}-{day}".format(
-        day=parsed[0], month=parsed[1], year=2000 + int(parsed[2])
-    )
+    formated = "{year}-{month}-{day}".format(day=parsed[0], month=parsed[1], year=2000 + int(parsed[2]))
     return maya.parse("{base}T{time}".format(base=formated, time=time)).datetime()
 
 
-class Regiojet(object):
-    def __init__(self):
-        self.s = requests.Session()
-        # getting cookie
+@attr.s
+class Regiojet(Provider):
+    s = attr.ib(factory=requests.Session)
+    cities = attr.ib(default=None)
+
+    def __attrs_post_init__(self):
+        self._getting_cookie()
+
+    def _getting_cookie(self):
         self.s.get("https://www.regiojet.cz")
         self.cities = self.get_destination() or self.fetch_destination()
 
     def get_destination(self) -> list:
-        redis_con = redis.StrictRedis(connection_pool=redis_pool)
+        redis_con = redis.StrictRedis(connection_pool=redis_pool, socket_connect_timeout=5)
 
         p = redis_con.pipeline()
         for k in redis_con.keys(my_prefix.format("*")):
@@ -50,9 +56,7 @@ class Regiojet(object):
         return cities
 
     def fetch_destination(self) -> list:
-        destination = self.s.get(
-            "https://www.studentagency.cz/data/wc/ybus-form/destinations-cs.json"
-        ).json()
+        destination = self.s.get("https://www.studentagency.cz/data/wc/ybus-form/destinations-cs.json").json()
 
         # parsing cities
         cities = []
@@ -77,13 +81,7 @@ class Regiojet(object):
                 return c["id"]
 
     # this is how type hinting looks like
-    def get_route(
-        self,
-        source: int = None,
-        destination: int = None,
-        departure: date = None,
-        arrival: date = None,
-    ):
+    def get_route(self, source: int = None, destination: int = None, departure: date = None, arrival: date = None):
         self.s.get(
             "https://jizdenky.regiojet.cz/Booking/from/{source}/to/{destination}/tarif/REGULAR/departure/{departure}/"
             "retdep/{arrival}/return/false".format(
@@ -106,7 +104,7 @@ class Regiojet(object):
         return r
 
     @staticmethod
-    def parse_single_item(item: Tag, base_date: str):
+    def parse_single_item(item: Tag, base_date: str) -> ResponseJourney:
         price_for_bus = item.find_all("div", "col_price")
         price_for_train = item.find_all("div", "detailButton col_price_no_basket_image")
         if price_for_bus:
@@ -118,23 +116,16 @@ class Regiojet(object):
             price = real_price_cur_combo[0]
             currency = real_price_cur_combo[3]
 
-        return {
-            "departure": parse_time(
-                base_date, item.find_all("div", "col_depart")[0].contents[0]
-            ),
-            "arrival": parse_time(
-                base_date, item.find_all("div", "col_arival")[0].contents[0]
-            ),
-            "space": item.find_all("div", "col_space")[0].get_text().strip(),
-            "price": price,
-            "currency": currency,
-        }
+        return ResponseJourney(
+            departure_datetime=parse_time(base_date, item.find_all("div", "col_depart")[0].contents[0]),
+            arrival_datetime=parse_time(base_date, item.find_all("div", "col_arival")[0].contents[0]),
+            price=price,
+            currency=currency,
+        )
 
-    def parse_routes(self, routes):
+    def parse_routes(self, routes) -> List[ResponseJourney]:
         soup = BeautifulSoup(routes.content, "html.parser")
-        parent_of_routes = soup.find_all(
-            "div", "item_blue blue_gradient_our routeSummary free"
-        )[0].parent
+        parent_of_routes = soup.find_all("div", "item_blue blue_gradient_our routeSummary free")[0].parent
 
         current_date = None
         routes = []
@@ -143,33 +134,15 @@ class Regiojet(object):
                 continue
             elif element.name == "h2":
                 current_date = element.get_text().split()[1]
-            elif (
-                " ".join(element.attrs["class"])
-                == "item_blue blue_gradient_our routeSummary free"
-            ):
+            elif " ".join(element.attrs["class"]) == "item_blue blue_gradient_our routeSummary free":
                 routes.append(self.parse_single_item(element, current_date))
         return routes
 
-    def get_route_prices(
-        self,
-        source: str,
-        destination: str,
-        departure: date = None,
-        arrival: date = None,
-    ):
+    def get_routes(
+        self, source: str, destination: str, departure: date = None, arrival: date = None
+    ) -> List[ResponseJourney]:
         source_id = self.find_city_id(source)
         dest_id = self.find_city_id(destination)
 
         raw_routes = self.get_route(source_id, dest_id, departure, arrival)
         return self.parse_routes(raw_routes)
-
-
-if __name__ == "__main__":
-    regio = Regiojet()
-    routes = regio.get_route_prices(
-        source="Brno",
-        destination="Praha",
-        departure=date(2018, 2, 24),
-        arrival=date(2018, 2, 24),
-    )
-    print(routes)

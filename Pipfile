@@ -15,6 +15,10 @@ redis = "*"
 gunicorn = "*"
 flask = "*"
 psycopg2-binary = "*"
+fastapi = {extras = ["all"],version = "*"}
+uvicorn = "*"
+pydantic = "*"
+requests = "*"
 
 [dev-packages]
 

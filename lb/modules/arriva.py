@@ -1,38 +1,28 @@
+from typing import List
+from urllib.parse import urljoin
+from datetime import date
+
+import attr
 from requests_html import HTMLSession
 
-# Helpfull -> look it up
-from urllib.parse import urljoin
-
-from typing import List
-import attr
+from lb.modules.provider_base import Provider
+from lb.data_classes.response_journey import ResponseJourney
 
 
 @attr.s
-class ResponseJourney:
-    departure_datetime = attr.ib(default=None)
-    arrival_datetime = attr.ib(default=None)
-    source = attr.ib(default=None)
-    destination = attr.ib(default=None)
-    price = attr.ib(default=None)
-    currency = attr.ib(default=None)
+class Arriva(Provider):
+    s: HTMLSession = attr.ib(factory=HTMLSession)
+    homepage: str = attr.ib(default="https://www.arriva.com.hr/en-us/")
 
-
-class ArrivaClient:
-    homepage = "https://www.arriva.com.hr/en-us/"
-    s = HTMLSession()
-
-    def get_journeys(
-        self,
-        source: str = "Split",
-        destination: str = "Zagreb",
-        departure: str = "22.10.2018.",
-    ):
+    def get_routes(
+        self, source: str = "Split", destination: str = "Zagreb", departure: date = None, arrival: date = None
+    ) -> List[ResponseJourney]:
         payload = {
             "post-type": "shop",
             "currentstepnumber": "1",
             "search-from": source,
             "search-to": destination,
-            "search-datetime": departure,
+            "search-datetime": departure.strftime("%d.%m.%Y"),  # "22.10.2018."
             "search-datetime-fixed": "",
             "return-date": "",
             "search-datetime-open": "",
@@ -42,42 +32,23 @@ class ArrivaClient:
         r = self.s.post(urljoin(self.homepage, "choose-your-journey"), data=payload)
 
         journeys: List[ResponseJourney] = []
+        for e in r.html.xpath('//*[@id="departures-group"]/div[@class="row tab-info"]'):
 
-        route_times = [
-            e.text
-            for e in r.html.find(
-                "#departures-group > div.row.tab-info > div.col-sm-3.polazak-dolazak"
-            )
-        ]
-        for route in route_times:
-            departure, arrival = (
-                route.replace("Departure - Arrival", "").split("\n")[0].split(" - ")
-            )
-
+            route_time = e.xpath('//*/div[@class="col-sm-3 polazak-dolazak"]')[0].text
+            departure, arrival = route_time.replace("Departure - Arrival", "").split("\n")[0].split(" - ")
             j = ResponseJourney(
-                departure_datetime=departure,
-                arrival_datetime=arrival,
-                source=source,
-                destination=destination,
+                departure_datetime=departure, arrival_datetime=arrival, source=source, destination=destination
             )
+
+            route_prices = [
+                p.text for p in e.xpath("//*[@class='btn btn-green btn-small btn-block visible-md visible-lg']")
+            ]
+            for price_raw in route_prices:
+                price, currency = price_raw.split()
+
+                j.price = price
+                j.currency = currency
+
             journeys.append(j)
 
-        route_prices = [
-            e.text
-            for e in r.html.xpath(
-                "//*[@class='btn btn-green btn-small btn-block visible-md visible-lg']"
-            )
-        ]
-        for index, route in enumerate(route_prices):
-            price, currency = route.split()
-
-            journeys[index].price = price
-            journeys[index].currency = currency
-
-        return [attr.asdict(j) for j in journeys]
-
-
-if __name__ == "__main__":
-    journeys = ArrivaClient().get_journeys()
-    for j in journeys:
-        print(j)
+        return journeys
