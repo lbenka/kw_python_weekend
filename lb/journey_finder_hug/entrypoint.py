@@ -1,5 +1,5 @@
 """For local debugging."""
-import hug 
+import hug
 
 from lb.journey_finder_hug import api as hug_api
 

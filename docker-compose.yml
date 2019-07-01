@@ -6,6 +6,9 @@ services:
     command: gunicorn --bind=0.0.0.0:5000 lb.journey_finder_flask.api:app
     ports:
       - "5000:5000"
+    environment: 
+      DEBUG: 1 
+      PASSWORD: MY_secret_password
 
   redis-local:
     image: redis
